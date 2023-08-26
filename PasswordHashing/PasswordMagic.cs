@@ -10,128 +10,65 @@ namespace PasswordHashing
 {
     internal class PasswordMagic
     {
+        /// <summary>
+        /// Stores the unencrypted password from the UnencryptedPw property
+        /// </summary>
         private string _unencryptedPw = "";
+
+        /// <summary>
+        /// Stores the hashed password from the Password Hash property
+        /// </summary>
         private string _passwordHash = "";
-        static private UnicodeEncoding _encoding = new UnicodeEncoding();
         
+        /// <summary>
+        /// Creates a new instance of the PasswordMagic object. Using the provided plaintext password
+        /// </summary>
+        /// <param name="unencryptedPw">Plaintext information to retrieve a hash for</param>
         public PasswordMagic(string unencryptedPw)
         {
             UnencryptedPw = unencryptedPw;
         }
+        /// <summary>
+        /// Returns the hashed version of the input information for compairison.
+        /// </summary>
         public string PasswordHash
         {
             get { return _passwordHash; }
         }
+
+        /// <summary>
+        /// Used to set the unencrypted password and compute a new hash value associated with it.
+        /// </summary>
         public string UnencryptedPw
         {
             set
             {
+                //store the value of the unencrypted source data/password
                 _unencryptedPw = value;
 
+                //uses SHA512.Create to create select the appropriate implimentation of SHA512 for this system
+                //automatically 
                 using (SHA512 shaM = SHA512.Create())
                 {
+                    //store the data in a byte array
                     var toEncrypt = Encoding.Unicode.GetBytes(_unencryptedPw);
+                    
+                    //compute the hash using the SHA512 instance created earlier
                     var hash = shaM.ComputeHash(toEncrypt);
 
-                    foreach (byte b in hash)
-                    {
-                        _passwordHash += String.Format("{0:x2}", b);
-                    }
+                    //convert the hash byte array to a string for easy storage.
+                    _passwordHash = Encoding.Unicode.GetString(hash);
                 }
             }
             get => _unencryptedPw;
         }
-        public static void GenerateKey(out string key, out string initializationVector)
-        {
-            using (Aes aesAlgorithm = Aes.Create())
-            {
-                key = Convert.ToBase64String(aesAlgorithm.Key);
-                initializationVector = Convert.ToBase64String(aesAlgorithm.IV);
-            }
-        }
-
-        static public string EncryptAES(string plaintext, string key, string initializationVector)
-        {
-            string cyphertext = "";
-
-            using (Aes aesAlgorithm = Aes.Create())
-            {
-                aesAlgorithm.Key = Convert.FromBase64String(key);
-                aesAlgorithm.IV = Convert.FromBase64String(initializationVector);
-                ICryptoTransform encryptor = aesAlgorithm.CreateEncryptor();
-                
-                using (MemoryStream ms = new MemoryStream())
-                {
-                    using (CryptoStream cryptostream = new CryptoStream(ms, encryptor, CryptoStreamMode.Write))
-                    {
-                        using (StreamWriter writer = new StreamWriter(cryptostream))
-                        {
-                            writer.Write(plaintext);
-                        }
-
-                        cyphertext = Convert.ToBase64String(ms.ToArray());
-                    }
-                }
-            }
-
-            return cyphertext;
-        }
-        static public string DecryptAES(string cyphertext, string key, string initializationVector)
-        {
-            string plaintext = "";
-
-            using (Aes aesAlgorithm = Aes.Create())
-            {
-                aesAlgorithm.Key = Convert.FromBase64String(key);
-                aesAlgorithm.IV = Convert.FromBase64String(initializationVector);
-                ICryptoTransform decryptor = aesAlgorithm.CreateDecryptor();
-
-                using (MemoryStream memory = new MemoryStream(Convert.FromBase64String(cyphertext)))
-                {
-                    using (CryptoStream cryptostream = new CryptoStream(memory, decryptor, CryptoStreamMode.Read))
-                    {
-                        using (StreamReader reader = new StreamReader(cryptostream))
-                        {
-                            plaintext = reader.ReadToEnd();
-                        }
-                    }
-                }
-            }
-
-            return plaintext;
-        }
-
-        //static public string EncryptRSA(string plaintext, string key)
-        //{
-        //    using (RSACryptoServiceProvider rsa = new RSACryptoServiceProvider())
-        //    {
-        //        var jsonOptions = new JsonSerializerOptions();
-        //        jsonOptions.IncludeFields = true;
-
-        //        RSAParameters param = JsonSerializer.Deserialize<RSAParameters>(key, jsonOptions);
-        //        rsa.ImportParameters(param);
-
-        //        var encryptedText = rsa.Encrypt(_encoding.GetBytes(plaintext), false);
-
-        //        return _encoding.GetString(encryptedText);
-        //    }
-        //}
-        //static public string DecryptRSA(string encryptedText, string key)
-        //{
-        //    using (RSACryptoServiceProvider rsa = new RSACryptoServiceProvider())
-        //    {
-        //        var jsonOptions = new JsonSerializerOptions();
-        //        jsonOptions.IncludeFields = true;
-
-        //        RSAParameters param = JsonSerializer.Deserialize<RSAParameters>(key, jsonOptions);
-
-        //        rsa.ImportParameters(param);
-
-        //        var plainText = rsa.Decrypt(_encoding.GetBytes(encryptedText), false);
-
-        //        return _encoding.GetString(plainText);
-        //    }
-        //}
+        
+        /// <summary>
+        /// Takes a password hash supplied to it and compaires it to the hash of this instance to see if there is a
+        /// match. Returns true if hash supplied matches the hash of the current instance (IE passwords match)
+        /// </summary>
+        /// <param name="pwHash">Hash to compare</param>
+        /// <returns>True if hashes match, false otherwise</returns>
         public bool Validate(string pwHash)
         {
             if (pwHash == PasswordHash)

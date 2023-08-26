@@ -52,13 +52,13 @@ while (parsedInput != 0)
         Console.Write("Please write a statement to encrypt: ");
         input = Console.ReadLine();
 
-        PasswordMagic.GenerateKey(out var key, out var initializationVector);
+        EncryptionMagic.GenerateKey(out var key, out var initializationVector);
         File.WriteAllText("AESKey.txt", key);
         File.WriteAllText("AESIV.txt", initializationVector);
 
         var encryptedText = "";
         if (input != null)
-            encryptedText = PasswordMagic.EncryptAES(input, key, initializationVector);
+            encryptedText = EncryptionMagic.EncryptAES(input, key, initializationVector);
 
         File.WriteAllText("encrypted.txt", encryptedText);
     }
@@ -84,7 +84,7 @@ while (parsedInput != 0)
         var key = File.ReadAllText("AESKey.txt");
         var initializationVector = File.ReadAllText("AESIV.txt");
 
-        var decryptedText = PasswordMagic.DecryptAES(encryptedText, key, initializationVector);
+        var decryptedText = EncryptionMagic.DecryptAES(encryptedText, key, initializationVector);
 
         Console.WriteLine("\nDecrypted Text: \n");
 
